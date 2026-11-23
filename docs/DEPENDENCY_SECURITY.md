@@ -381,6 +381,7 @@ Faktor relevansi:
 | 2026-11-23 | `npm audit --audit-level=high` | Runtime + dev | **PASS, 0 vulnerabilities** setelah override `effect@3.22.1` | Audit berubah seiring waktu; ulangi saat release |
 | 2026-11-23 | Prisma CLI | generate, migrate status, seed | Lulus dengan override effect | Tidak menguji semua fitur Prisma |
 | 2026-11-23 | `npm audit --audit-level=high` (Phase 2) | Runtime + dev | **PASS, 0 vulnerabilities**; tidak ada dependency baru | Audit berubah seiring waktu |
+| 2026-11-23 | `npm audit --audit-level=high` (Phase 3–4) | Runtime + dev | **PASS, 0 vulnerabilities**; tidak ada dependency baru | Audit berubah seiring waktu |
 | — | OSV-Scanner penuh | — | **NOT_VERIFIED** | Belum dijalankan |
 | — | Trivy | — | **NOT_VERIFIED** | Image belum dibangun |
 

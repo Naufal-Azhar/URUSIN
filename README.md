@@ -2,7 +2,7 @@
 
 Pendamping persiapan pengurusan administrasi publik untuk warga Batam. URUSIN **bukan** situs resmi pemerintah, tidak menerbitkan dokumen resmi, dan tidak mengajukan permohonan ke instansi.
 
-**Status:** Phase 1–3 — fondasi aplikasi, autentikasi/RBAC, katalog publik, pencarian, laporan guest, dan workspace pengurusan warga.
+**Status:** Phase 1–4 — fondasi aplikasi, autentikasi/RBAC, katalog publik, workspace warga, admin kurasi, triage laporan, dan audit.
 
 ## Batas produk
 
@@ -96,6 +96,8 @@ CLI membuat user jika belum ada, mengubah role menjadi `ADMIN`, dan menulis `Aud
 - Magic link email; tanpa password.
 - Workspace warga: multi-case, checklist, progres langkah, version warning, arsip/hapus; setiap query case difilter berdasarkan `user_id`.
 - Case menyimpan snapshot `service_version_id`; item dari versi lain ditolak saat update.
+- Admin: draft → review → publish/archive transaksional; publish mewajibkan sumber, verifikasi, persyaratan, langkah, dan handoff. Versi terbit immutable.
+- Laporan ditriase tanpa menampilkan identitas pelapor; setiap tindakan admin masuk `AuditEvent` tanpa PII.
 - Tidak memasang `@auth/core` atau `nodemailer` karena advisory keamanan.
 - Override `effect@3.22.1` untuk menambal advisory High transitive dari Prisma CLI; lihat `docs/DEPENDENCY_SECURITY.md`.
 - Email lokal dikirim ke Mailpit melalui transport SMTP dev-only. Produksi gagal tertutup sampai provider email disetujui owner.
