@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { SignOutButton } from "@/components/auth/sign-out-button";
-import { Alert } from "@/components/ui/alert";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { requireUser } from "@/modules/auth/guards";
 
@@ -36,10 +35,19 @@ export default async function PengaturanPage() {
         </dl>
       </Card>
 
-      <Alert variant="warning">
-        Fitur penghapusan akun akan tersedia pada fase hardening. Sementara itu, hubungi pengelola
-        melalui kanal yang akan diumumkan sebelum pilot publik.
-      </Alert>
+      <Card>
+        <CardTitle>Hapus akun</CardTitle>
+        <CardDescription>
+          Hapus akun, sesi, case, dan progres pengurusan secara permanen. Laporan kualitas konten
+          dapat tetap disimpan tanpa identitas pelapor.
+        </CardDescription>
+        <Link
+          href="/pengaturan/hapus-akun"
+          className="text-danger mt-3 inline-flex text-sm font-semibold hover:underline"
+        >
+          Buka halaman hapus akun
+        </Link>
+      </Card>
 
       <Card>
         <CardTitle>Sesi</CardTitle>

@@ -2,7 +2,7 @@
 
 Pendamping persiapan pengurusan administrasi publik untuk warga Batam. URUSIN **bukan** situs resmi pemerintah, tidak menerbitkan dokumen resmi, dan tidak mengajukan permohonan ke instansi.
 
-**Status:** Phase 1–4 — fondasi aplikasi, autentikasi/RBAC, katalog publik, workspace warga, admin kurasi, triage laporan, dan audit.
+**Status:** Phase 1–6 — QA selesai; **pilot publik belum GO** karena blocker konten, legal, email, dan operasional. Lihat `docs/PILOT_READINESS.md`.
 
 ## Batas produk
 
@@ -68,6 +68,9 @@ Buka `http://127.0.0.1:3000`. Mailpit: `http://127.0.0.1:8025`.
 | `npm run db:deploy` | Terapkan migrasi |
 | `npm run db:seed` | Seed 8 skenario DRAFT |
 | `npm run db:seed:demo` | Seed data `CONTOH UJI` untuk demo/E2E (non-production) |
+| `npm run backup` | Backup PostgreSQL ke `backups/` (PowerShell/Windows) |
+| `npm run restore:test` | Restore backup ke database uji (PowerShell/Windows) |
+| `npm run backup:sh` / `restore:test:sh` | Versi shell untuk Linux/CI |
 | `npm run audit:ci` | `npm audit --audit-level=high` |
 
 ## Database
@@ -98,6 +101,10 @@ CLI membuat user jika belum ada, mengubah role menjadi `ADMIN`, dan menulis `Aud
 - Case menyimpan snapshot `service_version_id`; item dari versi lain ditolak saat update.
 - Admin: draft → review → publish/archive transaksional; publish mewajibkan sumber, verifikasi, persyaratan, langkah, dan handoff. Versi terbit immutable.
 - Laporan ditriase tanpa menampilkan identitas pelapor; setiap tindakan admin masuk `AuditEvent` tanpa PII.
+- PDF lembar persiapan dibuat client-side dengan `pdf-lib`; tidak ada upload/penyimpanan file.
+- CSP nonce, security headers, rate limit auth/laporan, dan penghapusan akun dengan konfirmasi eksplisit.
+- Backup dan restore test tersedia; Docker image produksi tersedia di `Dockerfile`.
+- CSP memakai nonce dan `'self'`; Next.js dev saat ini belum menempelkan nonce ke semua tag script, sehingga `'self'` menjadi fallback. Verifikasi ulang CSP di produksi sebelum pilot.
 - Tidak memasang `@auth/core` atau `nodemailer` karena advisory keamanan.
 - Override `effect@3.22.1` untuk menambal advisory High transitive dari Prisma CLI; lihat `docs/DEPENDENCY_SECURITY.md`.
 - Email lokal dikirim ke Mailpit melalui transport SMTP dev-only. Produksi gagal tertutup sampai provider email disetujui owner.
@@ -107,9 +114,42 @@ CLI membuat user jika belum ada, mengubah role menjadi `ADMIN`, dan menulis `Aud
 - Rate limit in-memory (single-instance); `TRUST_PROXY=false` secara default. Set `true` hanya di belakang reverse proxy tepercaya yang menulis `X-Forwarded-For`.
 - Tidak ada upload, rich text, atau penyimpanan dokumen identitas.
 
+## QA dan performance
+
+```bash
+npm test                 # unit + component + integration
+npm run test:e2e         # 28 E2E
+npm run build
+npm run start            # produksi lokal
+npm run perf             # LCP/CLS baseline (butuh server :3000)
+```
+
+Hasil QA, scan OSV/Trivy, dan baseline performance ada di `docs/QA_REPORT.md`. Checklist pilot ada di `docs/PILOT_READINESS.md`.
+
+## Docker produksi
+
+```bash
+cp .env.production.example .env.production
+# Isi DATABASE_URL/MIGRATE_DATABASE_URL ke host "db", NEXTAUTH_URL HTTPS,
+# NEXTAUTH_SECRET, password PostgreSQL, dan konfigurasi email produksi.
+
+docker compose -f docker-compose.prod.yml --profile tools run --rm migrate
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Catatan:
+
+- `docker-compose.prod.yml` hanya memakai PostgreSQL dan app; Mailpit tidak dipakai di produksi.
+- Transport email produksi belum diimplementasikan. Aplikasi akan gagal tertutup saat mengirim magic link sampai owner menyetujui provider email.
+- Port app di-bind ke `127.0.0.1:3000`; gunakan reverse proxy TLS di depannya.
+- Jalankan `docker compose -f docker-compose.prod.yml --profile tools run --rm migrate` sebelum deploy atau setelah migrasi baru.
+- Backup/restore: `npm run backup` lalu `npm run restore:test` (Windows), atau `backup:sh`/`restore:test:sh` di Linux/CI.
+
 ## Dokumentasi
 
 - [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md)
+- [`docs/QA_REPORT.md`](docs/QA_REPORT.md)
+- [`docs/PILOT_READINESS.md`](docs/PILOT_READINESS.md)
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - [`docs/DEPENDENCY_SECURITY.md`](docs/DEPENDENCY_SECURITY.md)
 - [`docs/TEST_STRATEGY.md`](docs/TEST_STRATEGY.md)

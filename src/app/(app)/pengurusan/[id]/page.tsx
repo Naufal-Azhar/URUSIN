@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin } from "lucide-react";
 import { ConfirmDeleteButton } from "@/components/cases/confirm-delete-button";
+import { PreparationPdfButton } from "@/components/documents/preparation-pdf-button";
 import { RequirementCheckbox } from "@/components/cases/requirement-checkbox";
 import { StepStatusSelect } from "@/components/cases/step-status-select";
 import { Alert } from "@/components/ui/alert";
@@ -160,6 +161,48 @@ export default async function PengurusanPage({ params }: PengurusanPageProps) {
         </p>
       </Card>
 
+      <Card>
+        <CardTitle>Lembar persiapan</CardTitle>
+        <CardDescription>
+          Unduh checklist dan ringkasan prosedur sebagai PDF non-resmi. File dibuat di browser dan
+          tidak disimpan di server.
+        </CardDescription>
+        <div className="mt-4">
+          <PreparationPdfButton
+            data={{
+              serviceTitle: detail.service.title,
+              categoryName: detail.service.categoryName,
+              versionNumber: detail.versionNumber,
+              verifiedAt: detail.verifiedAt.toISOString(),
+              summary: detail.summary,
+              eligibilityNote: detail.eligibilityNote,
+              requirements: detail.requirements.map((requirement) => ({
+                title: requirement.title,
+                guidance: requirement.guidance,
+                conditionNote: requirement.conditionNote,
+                isRequired: requirement.isRequired,
+                isReady: requirement.isReady,
+              })),
+              steps: detail.steps.map((step) => ({
+                title: step.title,
+                guidance: step.guidance,
+                stepKind: stepKindLabels[step.stepKind],
+                status: stepStatusLabels[step.status],
+              })),
+              sources: detail.sources.map((source) => ({
+                title: source.title,
+                agencyName: source.agencyName,
+                url: source.url,
+                lastCheckedAt: source.lastCheckedAt.toISOString(),
+              })),
+              handoffs: detail.handoffs.map((handoff) => ({
+                label: handoff.label,
+                officialUrl: handoff.officialUrl,
+              })),
+            }}
+          />
+        </div>
+      </Card>
       <section aria-labelledby="checklist-heading" className="space-y-3">
         <div>
           <h2 id="checklist-heading" className="text-xl font-semibold">

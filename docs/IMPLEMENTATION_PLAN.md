@@ -1,6 +1,6 @@
 # Implementation Plan — URUSIN MVP v1.1
 
-**Status:** Phase 0 disetujui owner; **Phase 1–4 SELESAI** (2026-11-23).  
+**Status:** Phase 0 disetujui owner; **Phase 1–6 SELESAI** (2026-11-23), **pilot publik belum GO**.  
 **Tanggal audit:** 2026-11-23  
 **Sumber kebenaran:** `PRD_URUSIN_v1.md`, `ERD_URUSIN_v1.md`, `AGENTS_URUSIN_v1.1.md`  
 **Prinsip:** security by design, modular monolith, minimisasi data pribadi, zero-cost development, tanpa over-engineering.
@@ -13,6 +13,8 @@
 | Phase 2 — Katalog publik | SELESAI | `/layanan`, detail, search FTS/trigram, laporan guest, 18 integration test, 16 E2E |
 | Phase 3 — Workspace warga | SELESAI | Dashboard multi-case, checklist/langkah, ownership/BOLA, version warning, arsip/hapus, 25 integration test, 19 E2E |
 | Phase 4 — Admin, laporan, audit | SELESAI | Draft → review → publish/archive transaksional, sumber/handoff, triage laporan, audit, 31 integration test, 22 E2E |
+| Phase 5 — Dokumen & hardening | SELESAI | PDF client-side, CSP/security headers, rate limit auth, hapus akun, backup/restore, Docker image, 34 integration test, 28 E2E |
+| Phase 6 — QA & kesiapan pilot | SELESAI (QA) | 56 test + 28 E2E, OSV/Trivy bersih, CLS 0, CI scan, runbook pilot; blocker pilot terdokumentasi |
 
 > Dokumen ini tetap menjadi rencana dan catatan keputusan. Perubahan scope tetap memerlukan persetujuan owner; fase berikutnya belum dimulai tanpa persetujuan.
 

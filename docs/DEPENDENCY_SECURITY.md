@@ -382,8 +382,11 @@ Faktor relevansi:
 | 2026-11-23 | Prisma CLI | generate, migrate status, seed | Lulus dengan override effect | Tidak menguji semua fitur Prisma |
 | 2026-11-23 | `npm audit --audit-level=high` (Phase 2) | Runtime + dev | **PASS, 0 vulnerabilities**; tidak ada dependency baru | Audit berubah seiring waktu |
 | 2026-11-23 | `npm audit --audit-level=high` (Phase 3–4) | Runtime + dev | **PASS, 0 vulnerabilities**; tidak ada dependency baru | Audit berubah seiring waktu |
-| — | OSV-Scanner penuh | — | **NOT_VERIFIED** | Belum dijalankan |
-| — | Trivy | — | **NOT_VERIFIED** | Image belum dibangun |
+| 2026-11-23 | `npm audit --audit-level=high` (Phase 5) | Runtime + dev | **PASS, 0 vulnerabilities**; `pdf-lib` sudah ada di stack | Audit berubah seiring waktu |
+| 2026-11-23 | OSV-Scanner (Phase 6) | 737 package dari `package-lock.json` | **PASS, no issues found** | Database OSV berubah; scan ulang di CI |
+| 2026-11-23 | Trivy image (Phase 6) | `urusin:local`, HIGH/CRITICAL | **PASS, 0 temuan** setelah npm CLI dihapus dari runner | Scan awal 6 HIGH pada npm CLI bundled, bukan dependency app |
+
+**Mitigasi image Phase 6:** stage runner menghapus `/usr/local/lib/node_modules`, `npm`, `npx`, dan `corepack` karena aplikasi hanya menjalankan `node server.js`. Ini menghilangkan 6 HIGH dari npm CLI bundled tanpa mengubah dependency aplikasi. CI menjalankan OSV-Scanner dan Trivy dengan image digest pinned serta `--exit-code 1` untuk HIGH/CRITICAL.
 
 ---
 

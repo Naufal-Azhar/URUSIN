@@ -20,6 +20,14 @@ export type CaseStep = {
   status: StepStatus;
 };
 
+export type CaseSource = {
+  id: string;
+  agencyName: string;
+  title: string;
+  url: string;
+  lastCheckedAt: Date;
+};
+
 export type CaseHandoff = {
   id: string;
   label: string;
@@ -58,6 +66,7 @@ export type CaseDetail = CaseSummary & {
   eligibilityNote: string | null;
   requirements: CaseRequirement[];
   steps: CaseStep[];
+  sources: CaseSource[];
   handoffs: CaseHandoff[];
 };
 

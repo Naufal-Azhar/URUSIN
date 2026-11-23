@@ -1,3 +1,4 @@
+import { statSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { signInWithMagicLink } from "./helpers";
@@ -28,6 +29,24 @@ test("membuat dua pengurusan, progres bertahan, arsip, dan hapus", async ({ page
   await expect(page.getByLabel("Status langkah [CONTOH] Siapkan dokumen")).toHaveValue(
     "USER_MARKED_DONE",
   );
+
+  const postRequests: string[] = [];
+  const trackPosts = (request: { method: () => string; url: () => string }) => {
+    if (request.method() === "POST") postRequests.push(request.url());
+  };
+  page.on("request", trackPosts);
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Unduh lembar persiapan" }).click();
+  const download = await downloadPromise;
+  page.off("request", trackPosts);
+
+  expect(download.suggestedFilename()).toBe("lembar-persiapan-urusin.pdf");
+  const downloadPath = await download.path();
+  expect(downloadPath).not.toBeNull();
+  expect(statSync(downloadPath!).size).toBeGreaterThan(1000);
+  expect(postRequests).toHaveLength(0);
+  expect(await page.evaluate(() => localStorage.length + sessionStorage.length)).toBe(0);
 
   await page.goto("/layanan/contoh-sim-c");
   await page.getByRole("button", { name: "Mulai pengurusan" }).click();

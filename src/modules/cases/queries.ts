@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { officialDomainAllowlist } from "@/lib/env";
-import { isAllowedOfficialUrl } from "@/lib/security";
+import { isAllowedOfficialUrl, parseHttpUrl } from "@/lib/security";
 import { publishedVersionWhere } from "@/modules/catalog/queries";
 import type {
   CaseDetail,
@@ -167,6 +167,7 @@ export async function getOwnedCaseDetail(
           service: { include: { category: true } },
           requirements: { orderBy: { sortOrder: "asc" } },
           steps: { orderBy: { sortOrder: "asc" } },
+          sources: { include: { officialSource: true } },
           handoffs: true,
         },
       },
@@ -222,6 +223,20 @@ export async function getOwnedCaseDetail(
     status: stepStatuses.get(step.id) ?? "NOT_STARTED",
   }));
 
+  const sources = version.sources
+    .map((versionSource) => {
+      const source = versionSource.officialSource;
+      if (!parseHttpUrl(source.url)) return null;
+      return {
+        id: source.id,
+        agencyName: source.agencyName,
+        title: source.title,
+        url: source.url,
+        lastCheckedAt: source.lastCheckedAt,
+      };
+    })
+    .filter((source): source is NonNullable<typeof source> => source !== null);
+
   const handoffs = version.handoffs
     .filter((handoff) => isAllowedOfficialUrl(handoff.officialUrl, officialDomainAllowlist))
     .map((handoff) => ({
@@ -248,6 +263,7 @@ export async function getOwnedCaseDetail(
     eligibilityNote: version.eligibilityNote,
     requirements,
     steps,
+    sources,
     handoffs,
     requirementTotal: requirements.length,
     requirementReady: requirements.filter((requirement) => requirement.isReady).length,

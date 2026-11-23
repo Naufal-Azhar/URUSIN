@@ -3,6 +3,7 @@ node_modules/
 out/
 build/
 coverage/
+backups/
 playwright-report/
 test-results/
 blob-report/
@@ -11,6 +12,7 @@ src/generated/
 .env.*
 !.env.example
 !.env.test.example
+!.env.production.example
 *.log
 npm-debug.log*
 .DS_Store

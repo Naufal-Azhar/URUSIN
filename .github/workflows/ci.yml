@@ -126,6 +126,29 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
 
+  security-scans:
+    name: OSV and container scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: OSV-Scanner
+        run: >-
+          docker run --rm
+          -v "$PWD:/src:ro"
+          ghcr.io/google/osv-scanner@sha256:a70ffffc2bfd33482953e5d6b64c6fcdb30239717a07b0f0d3ab2859ce3e4cde
+          scan source -r /src
+      - name: Build image
+        run: docker build -t urusin:ci .
+      - name: Save image
+        run: docker save urusin:ci -o "$RUNNER_TEMP/urusin-image.tar"
+      - name: Trivy image scan
+        run: >-
+          docker run --rm
+          -v "$RUNNER_TEMP:/scan:ro"
+          aquasec/trivy@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
+          image --input /scan/urusin-image.tar
+          --severity HIGH,CRITICAL --exit-code 1 --no-progress
+
   audit:
     name: Dependency audit
     runs-on: ubuntu-latest

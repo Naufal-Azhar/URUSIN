@@ -20,6 +20,7 @@ const envSchema = z.object({
   RATE_LIMIT_MAGIC_LINK_PER_IP: z.coerce.number().int().positive().default(5),
   RATE_LIMIT_MAGIC_LINK_PER_EMAIL: z.coerce.number().int().positive().default(3),
   RATE_LIMIT_REPORT_PER_IP: z.coerce.number().int().positive().default(3),
+  RATE_LIMIT_AUTH_PER_IP: z.coerce.number().int().positive().default(60),
   TRUST_PROXY: z
     .enum(["true", "false"])
     .default("false")

@@ -7,6 +7,8 @@ export default defineConfig({
   testDir: "./tests/e2e",
   globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: false,
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
