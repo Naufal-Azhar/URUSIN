@@ -1,0 +1,381 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CITIZEN
+  ADMIN
+}
+
+enum ServiceLifecycleStatus {
+  ACTIVE
+  RETIRED
+}
+
+enum ServiceVersionStatus {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum StepKind {
+  PREPARE
+  VISIT
+  HANDOFF
+  FOLLOWUP
+}
+
+enum CaseStatus {
+  IN_PROGRESS
+  USER_MARKED_DONE
+  ARCHIVED
+}
+
+enum StepProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  USER_MARKED_DONE
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWING
+  RESOLVED
+  REJECTED
+}
+
+enum ReportIssueType {
+  OUTDATED_INFO
+  BROKEN_LINK
+  WRONG_REQUIREMENT
+  OTHER
+}
+
+enum RevisionAction {
+  SUBMIT
+  APPROVE
+  REJECT
+  PUBLISH
+  ARCHIVE
+}
+
+enum HandoffChannel {
+  WEB
+  PHYSICAL
+  OTHER
+}
+
+enum AuditAction {
+  SERVICE_CREATE
+  SERVICE_UPDATE
+  VERSION_CREATE
+  VERSION_UPDATE
+  VERSION_SUBMIT
+  VERSION_APPROVE
+  VERSION_REJECT
+  VERSION_PUBLISH
+  VERSION_ARCHIVE
+  REPORT_TRIAGE
+  ADMIN_PROMOTE
+  ACCOUNT_DELETE
+}
+
+model User {
+  id            String    @id @default(uuid()) @db.Uuid
+  email         String    @unique
+  name          String?   @map("display_name")
+  role          Role      @default(CITIZEN)
+  emailVerified DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  image         String?
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  accounts          Account[]
+  sessions          Session[]
+  cases             ServiceCase[]
+  reports           ContentReport[]    @relation("Reporter")
+  authoredRevisions ContentRevision[]  @relation("Author")
+  reviewedRevisions ContentRevision[]  @relation("Reviewer")
+  verifiedVersions  ServiceVersion[]   @relation("Verifier")
+  auditEvents       AuditEvent[]       @relation("Actor")
+
+  @@map("User")
+}
+
+model Account {
+  id                String  @id @default(uuid()) @db.Uuid
+  userId            String  @map("user_id") @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("Account")
+}
+
+model Session {
+  id           String   @id @default(uuid()) @db.Uuid
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id") @db.Uuid
+  expires      DateTime @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("Session")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime @db.Timestamptz(6)
+
+  @@unique([identifier, token])
+  @@map("VerificationToken")
+}
+
+model ServiceCategory {
+  id        String    @id @default(uuid()) @db.Uuid
+  slug      String    @unique
+  name      String
+  sortOrder Int       @map("sort_order")
+  services  Service[]
+
+  @@map("ServiceCategory")
+}
+
+model Service {
+  id              String                 @id @default(uuid()) @db.Uuid
+  categoryId      String                 @map("category_id") @db.Uuid
+  code            String                 @unique
+  slug            String                 @unique
+  title           String
+  lifecycleStatus ServiceLifecycleStatus @default(ACTIVE) @map("lifecycle_status")
+  createdAt       DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  category ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  aliases  ServiceAlias[]
+  versions ServiceVersion[]
+  reports  ContentReport[]
+
+  @@index([categoryId, lifecycleStatus])
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@map("Service")
+}
+
+model ServiceAlias {
+  id        String  @id @default(uuid()) @db.Uuid
+  serviceId String  @map("service_id") @db.Uuid
+  phrase    String
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, phrase])
+  @@index([serviceId])
+  @@index([phrase(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@map("ServiceAlias")
+}
+
+model ServiceVersion {
+  id              String               @id @default(uuid()) @db.Uuid
+  serviceId       String               @map("service_id") @db.Uuid
+  versionNumber   Int                  @map("version_number")
+  status          ServiceVersionStatus @default(DRAFT)
+  summary         String               @db.Text
+  eligibilityNote String?              @map("eligibility_note") @db.Text
+  verifiedAt      DateTime?            @map("verified_at") @db.Timestamptz(6)
+  verifiedById    String?              @map("verified_by_id") @db.Uuid
+  publishedAt     DateTime?            @map("published_at") @db.Timestamptz(6)
+  createdAt       DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  service      Service        @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  verifiedBy   User?          @relation("Verifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  sources      VersionSource[]
+  requirements Requirement[]
+  steps        WorkflowStep[]
+  handoffs     OfficialHandoff[]
+  cases        ServiceCase[]
+  revisions    ContentRevision[]
+
+  @@unique([serviceId, versionNumber])
+  @@index([serviceId, status])
+  @@map("ServiceVersion")
+}
+
+model OfficialSource {
+  id             String   @id @default(uuid()) @db.Uuid
+  agencyName     String   @map("agency_name")
+  title          String
+  url            String   @db.VarChar(2048)
+  lastCheckedAt  DateTime @map("last_checked_at") @db.Timestamptz(6)
+
+  versionSources VersionSource[]
+
+  @@map("OfficialSource")
+}
+
+model VersionSource {
+  serviceVersionId String  @map("service_version_id") @db.Uuid
+  officialSourceId String  @map("official_source_id") @db.Uuid
+  evidenceNote     String? @map("evidence_note") @db.Text
+
+  serviceVersion ServiceVersion @relation(fields: [serviceVersionId], references: [id], onDelete: Cascade)
+  officialSource OfficialSource @relation(fields: [officialSourceId], references: [id], onDelete: Restrict)
+
+  @@id([serviceVersionId, officialSourceId])
+  @@map("VersionSource")
+}
+
+model Requirement {
+  id               String  @id @default(uuid()) @db.Uuid
+  serviceVersionId String  @map("service_version_id") @db.Uuid
+  title            String
+  guidance         String  @db.Text
+  conditionNote    String? @map("condition_note") @db.Text
+  sortOrder        Int     @map("sort_order")
+  isRequired       Boolean @default(true) @map("is_required")
+
+  serviceVersion ServiceVersion       @relation(fields: [serviceVersionId], references: [id], onDelete: Cascade)
+  progress       RequirementProgress[]
+
+  @@index([serviceVersionId, sortOrder])
+  @@map("Requirement")
+}
+
+model WorkflowStep {
+  id               String   @id @default(uuid()) @db.Uuid
+  serviceVersionId String   @map("service_version_id") @db.Uuid
+  title            String
+  guidance         String   @db.Text
+  stepKind         StepKind @map("step_kind")
+  sortOrder        Int      @map("sort_order")
+
+  serviceVersion ServiceVersion @relation(fields: [serviceVersionId], references: [id], onDelete: Cascade)
+  progress       StepProgress[]
+
+  @@index([serviceVersionId, sortOrder])
+  @@map("WorkflowStep")
+}
+
+model OfficialHandoff {
+  id               String         @id @default(uuid()) @db.Uuid
+  serviceVersionId String         @map("service_version_id") @db.Uuid
+  label            String
+  officialUrl      String         @map("official_url") @db.VarChar(2048)
+  channelType      HandoffChannel @map("channel_type")
+  caveat           String?        @db.Text
+
+  serviceVersion ServiceVersion @relation(fields: [serviceVersionId], references: [id], onDelete: Cascade)
+
+  @@index([serviceVersionId])
+  @@map("OfficialHandoff")
+}
+
+model ServiceCase {
+  id               String     @id @default(uuid()) @db.Uuid
+  userId           String     @map("user_id") @db.Uuid
+  serviceVersionId String     @map("service_version_id") @db.Uuid
+  status           CaseStatus @default(IN_PROGRESS)
+  startedAt        DateTime   @default(now()) @map("started_at") @db.Timestamptz(6)
+  completedAt      DateTime?  @map("completed_at") @db.Timestamptz(6)
+  deletedAt        DateTime?  @map("deleted_at") @db.Timestamptz(6)
+
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceVersion      ServiceVersion       @relation(fields: [serviceVersionId], references: [id], onDelete: Restrict)
+  requirementProgress RequirementProgress[]
+  stepProgress        StepProgress[]
+
+  @@index([userId, status, startedAt])
+  @@map("ServiceCase")
+}
+
+model RequirementProgress {
+  id            String   @id @default(uuid()) @db.Uuid
+  caseId        String   @map("case_id") @db.Uuid
+  requirementId String   @map("requirement_id") @db.Uuid
+  isReady       Boolean  @default(false) @map("is_ready")
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  case        ServiceCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  requirement Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@unique([caseId, requirementId])
+  @@map("RequirementProgress")
+}
+
+model StepProgress {
+  id             String             @id @default(uuid()) @db.Uuid
+  caseId         String             @map("case_id") @db.Uuid
+  workflowStepId String             @map("workflow_step_id") @db.Uuid
+  status         StepProgressStatus @default(NOT_STARTED)
+  updatedAt      DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  case         ServiceCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  workflowStep WorkflowStep @relation(fields: [workflowStepId], references: [id], onDelete: Cascade)
+
+  @@unique([caseId, workflowStepId])
+  @@map("StepProgress")
+}
+
+model ContentReport {
+  id         String          @id @default(uuid()) @db.Uuid
+  serviceId  String          @map("service_id") @db.Uuid
+  reporterId String?         @map("reporter_id") @db.Uuid
+  issueType  ReportIssueType @map("issue_type")
+  message    String          @db.VarChar(1000)
+  status     ReportStatus    @default(OPEN)
+  createdAt  DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  service  Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  reporter User?   @relation("Reporter", fields: [reporterId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("ContentReport")
+}
+
+model ContentRevision {
+  id               String         @id @default(uuid()) @db.Uuid
+  serviceVersionId String         @map("service_version_id") @db.Uuid
+  authorId         String         @map("author_id") @db.Uuid
+  reviewerId       String?        @map("reviewer_id") @db.Uuid
+  action           RevisionAction
+  note             String?        @db.Text
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  serviceVersion ServiceVersion @relation(fields: [serviceVersionId], references: [id], onDelete: Cascade)
+  author         User           @relation("Author", fields: [authorId], references: [id], onDelete: Restrict)
+  reviewer       User?          @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([serviceVersionId, createdAt])
+  @@map("ContentRevision")
+}
+
+model AuditEvent {
+  id         String      @id @default(uuid()) @db.Uuid
+  actorId    String?     @map("actor_id") @db.Uuid
+  entityType String      @map("entity_type")
+  entityId   String      @map("entity_id") @db.Uuid
+  action     AuditAction
+  detail     String?     @db.VarChar(500)
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  actor User? @relation("Actor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("AuditEvent")
+}
