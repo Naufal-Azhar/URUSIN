@@ -52,26 +52,28 @@ Buka `http://127.0.0.1:3000`. Mailpit: `http://127.0.0.1:8025`.
 
 ## Perintah
 
-| Perintah | Fungsi |
-|---|---|
-| `npm run dev` | Next.js development |
-| `npm run build` | Build produksi (menjalankan `prisma generate`) |
-| `npm run start` | Menjalankan build produksi |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | TypeScript strict |
-| `npm run test:unit` | Unit test (Vitest) |
-| `npm run test:component` | Component test (RTL) |
-| `npm run test:integration` | Integration test (PostgreSQL test) |
-| `npm run test:e2e` | E2E Playwright |
-| `npm run test:a11y` | Axe accessibility |
-| `npm run db:generate` | Generate Prisma Client |
-| `npm run db:deploy` | Terapkan migrasi |
-| `npm run db:seed` | Seed 8 skenario DRAFT |
-| `npm run db:seed:demo` | Seed data `CONTOH UJI` untuk demo/E2E (non-production) |
-| `npm run backup` | Backup PostgreSQL ke `backups/` (PowerShell/Windows) |
-| `npm run restore:test` | Restore backup ke database uji (PowerShell/Windows) |
-| `npm run backup:sh` / `restore:test:sh` | Versi shell untuk Linux/CI |
-| `npm run audit:ci` | `npm audit --audit-level=high` |
+| Perintah                                | Fungsi                                                   |
+| --------------------------------------- | -------------------------------------------------------- |
+| `npm run dev`                           | Next.js development                                      |
+| `npm run build`                         | Build produksi (menjalankan `prisma generate`)           |
+| `npm run start`                         | Menjalankan build produksi                               |
+| `npm run lint`                          | ESLint                                                   |
+| `npm run typecheck`                     | TypeScript strict                                        |
+| `npm run test:unit`                     | Unit test (Vitest)                                       |
+| `npm run test:component`                | Component test (RTL)                                     |
+| `npm run test:integration`              | Integration test (PostgreSQL test)                       |
+| `npm run test:e2e`                      | E2E Playwright                                           |
+| `npm run test:a11y`                     | Axe accessibility                                        |
+| `npm run db:generate`                   | Generate Prisma Client                                   |
+| `npm run db:deploy`                     | Terapkan migrasi                                         |
+| `npm run db:seed`                       | Seed 8 skenario DRAFT                                    |
+| `npm run db:seed:demo`                  | Seed data `CONTOH UJI` untuk demo/E2E (non-production)   |
+| `npm run backup`                        | Backup PostgreSQL dev ke `backups/` (PowerShell/Windows) |
+| `npm run backup:prod`                   | Backup database produksi                                 |
+| `npm run restore:test`                  | Restore backup dev ke database uji                       |
+| `npm run restore:test:prod`             | Restore backup produksi ke database uji                  |
+| `npm run backup:sh` / `restore:test:sh` | Versi shell; set `COMPOSE_FILE` untuk produksi           |
+| `npm run audit:ci`                      | `npm audit --audit-level=high`                           |
 
 ## Database
 
@@ -120,7 +122,7 @@ CLI membuat user jika belum ada, mengubah role menjadi `ADMIN`, dan menulis `Aud
 npm test                 # unit + component + integration
 npm run test:e2e         # 28 E2E
 npm run build
-npm run start            # produksi lokal
+$env:TRUST_PROXY="true"; npm run start   # produksi lokal
 npm run perf             # LCP/CLS baseline (butuh server :3000)
 ```
 
@@ -141,9 +143,9 @@ Catatan:
 
 - `docker-compose.prod.yml` hanya memakai PostgreSQL dan app; Mailpit tidak dipakai di produksi.
 - Transport email produksi belum diimplementasikan. Aplikasi akan gagal tertutup saat mengirim magic link sampai owner menyetujui provider email.
-- Port app di-bind ke `127.0.0.1:3000`; gunakan reverse proxy TLS di depannya.
+- Port app di-bind ke `127.0.0.1:3000`; gunakan reverse proxy TLS di depannya dan pastikan proxy mengisi `X-Forwarded-For`. `TRUST_PROXY=true` wajib di produksi; aplikasi mengembalikan 503 jika masih `false`.
 - Jalankan `docker compose -f docker-compose.prod.yml --profile tools run --rm migrate` sebelum deploy atau setelah migrasi baru.
-- Backup/restore: `npm run backup` lalu `npm run restore:test` (Windows), atau `backup:sh`/`restore:test:sh` di Linux/CI.
+- Backup/restore produksi: `npm run backup:prod` lalu `npm run restore:test:prod`. Di Linux: `COMPOSE_FILE=docker-compose.prod.yml npm run backup:sh`, lalu `COMPOSE_FILE=docker-compose.prod.yml npm run restore:test:sh`. Tanpa `-prod`, script memakai `docker-compose.yml` (dev) dan menampilkan nama compose yang dipakai.
 
 ## Dokumentasi
 

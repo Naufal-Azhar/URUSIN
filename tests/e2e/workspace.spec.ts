@@ -1,13 +1,14 @@
 import { statSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { signInWithMagicLink } from "./helpers";
+import { signInWithMagicLink, waitForHydration } from "./helpers";
 
 test("membuat dua pengurusan, progres bertahan, arsip, dan hapus", async ({ page, request }) => {
   const email = `workspace-${Date.now()}@example.test`;
   await signInWithMagicLink(page, request, email);
 
   await page.goto("/layanan/contoh-ktp-hilang");
+  await waitForHydration(page);
   await page.getByRole("button", { name: "Mulai pengurusan" }).click();
   await expect(page).toHaveURL(/\/pengurusan\/[0-9a-f-]+/);
   const firstCaseUrl = page.url();
@@ -19,6 +20,7 @@ test("membuat dua pengurusan, progres bertahan, arsip, dan hapus", async ({ page
   await checkbox.check();
   await requirementRequest;
   await page.reload();
+  await waitForHydration(page);
   await expect(page.getByRole("checkbox", { name: /Dokumen identitas/ })).toBeChecked();
 
   const stepSelect = page.getByLabel("Status langkah [CONTOH] Siapkan dokumen");
@@ -26,6 +28,7 @@ test("membuat dua pengurusan, progres bertahan, arsip, dan hapus", async ({ page
   await stepSelect.selectOption("USER_MARKED_DONE");
   await stepRequest;
   await page.reload();
+  await waitForHydration(page);
   await expect(page.getByLabel("Status langkah [CONTOH] Siapkan dokumen")).toHaveValue(
     "USER_MARKED_DONE",
   );
@@ -49,6 +52,7 @@ test("membuat dua pengurusan, progres bertahan, arsip, dan hapus", async ({ page
   expect(await page.evaluate(() => localStorage.length + sessionStorage.length)).toBe(0);
 
   await page.goto("/layanan/contoh-sim-c");
+  await waitForHydration(page);
   await page.getByRole("button", { name: "Mulai pengurusan" }).click();
   await expect(page).toHaveURL(/\/pengurusan\/[0-9a-f-]+/);
 
@@ -57,6 +61,7 @@ test("membuat dua pengurusan, progres bertahan, arsip, dan hapus", async ({ page
   await expect(page.getByText("Perpanjangan SIM C")).toBeVisible();
 
   await page.goto(firstCaseUrl);
+  await waitForHydration(page);
   await page.getByRole("button", { name: "Arsipkan" }).click();
   await expect(page).toHaveURL(/\/dashboard/);
   await expect(page.getByRole("heading", { name: "Diarsipkan" })).toBeVisible();

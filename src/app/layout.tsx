@@ -31,7 +31,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           Lewati ke konten utama
         </a>
         <SiteHeader />
-        <main id="konten" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-10">
+        <main id="konten" className="mx-auto w-full max-w-6xl flex-1 px-5 py-5 sm:px-8 sm:py-7">
           {children}
         </main>
         <SiteFooter />

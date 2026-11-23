@@ -16,10 +16,23 @@ export type RateLimitResult = {
 };
 
 function cleanup(now: number) {
-  if (buckets.size <= MAX_BUCKETS) return;
+  if (buckets.size < MAX_BUCKETS) return;
+
   for (const [key, bucket] of buckets) {
     if (bucket.resetAt <= now) buckets.delete(key);
   }
+
+  if (buckets.size < MAX_BUCKETS) return;
+
+  let oldestKey: string | null = null;
+  let oldestReset = Number.POSITIVE_INFINITY;
+  for (const [key, bucket] of buckets) {
+    if (bucket.resetAt < oldestReset) {
+      oldestKey = key;
+      oldestReset = bucket.resetAt;
+    }
+  }
+  if (oldestKey) buckets.delete(oldestKey);
 }
 
 export function hashRateLimitKey(value: string) {
@@ -32,10 +45,9 @@ export function checkRateLimit(
   windowMs: number,
   now = Date.now(),
 ): RateLimitResult {
-  cleanup(now);
-
   const existing = buckets.get(key);
   if (!existing || existing.resetAt <= now) {
+    cleanup(now);
     buckets.set(key, { count: 1, resetAt: now + windowMs });
     return {
       allowed: true,

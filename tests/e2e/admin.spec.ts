@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { signInWithMagicLink } from "./helpers";
+import { signInWithMagicLink, waitForHydration } from "./helpers";
 
 test("admin membuat layanan, publish setelah lengkap, dan versi terbit terkunci", async ({
   page,
@@ -9,6 +9,7 @@ test("admin membuat layanan, publish setelah lengkap, dan versi terbit terkunci"
   await signInWithMagicLink(page, request, "demo-admin@example.test");
   await page.goto("/admin/layanan");
   await expect(page.getByRole("heading", { name: "Layanan", level: 1 })).toBeVisible();
+  await waitForHydration(page);
 
   const suffix = String(Date.now()).slice(-4);
   const code = `T${suffix}-01`;
@@ -23,47 +24,48 @@ test("admin membuat layanan, publish setelah lengkap, dan versi terbit terkunci"
 
   await expect(page.getByRole("heading", { name: title, level: 1 })).toBeVisible();
   await expect(page.getByText("Layanan dan versi draft berhasil dibuat.")).toBeVisible();
-  await page.waitForTimeout(1500);
+  await waitForHydration(page);
 
   await page
     .getByLabel("Ringkasan prosedur")
     .fill("Ringkasan prosedur E2E yang lengkap dan layak untuk pengujian publish.");
   await page.getByRole("button", { name: "Simpan ringkasan" }).click();
   await expect(page.getByText("Perubahan berhasil disimpan.")).toBeVisible();
-  await page.waitForTimeout(1500);
+  await waitForHydration(page);
 
   await page.getByLabel("Judul persyaratan").fill("Dokumen E2E");
   await page.getByLabel("Panduan persyaratan").fill("Panduan persyaratan E2E.");
   await page.getByRole("button", { name: "Tambah persyaratan" }).click();
   await expect(page.getByText("Item berhasil ditambahkan.")).toBeVisible();
-  await page.waitForTimeout(1500);
+  await waitForHydration(page);
 
   await page.getByLabel("Judul langkah").fill("Langkah E2E");
   await page.getByLabel("Panduan langkah").fill("Panduan langkah E2E.");
   await page.getByRole("button", { name: "Tambah langkah" }).click();
   await expect(page.getByText("Item berhasil ditambahkan.")).toBeVisible();
-  await page.waitForTimeout(1500);
+  await page.reload();
+  await waitForHydration(page, 'input[name="url"]');
 
   await page.getByLabel("Nama instansi").fill("Instansi E2E");
   await page.getByLabel("Judul sumber").fill("Sumber E2E");
   await page.getByLabel("URL sumber").fill("https://example.com/sumber-e2e");
   await page.getByRole("button", { name: "Tambah sumber" }).click();
   await expect(page.getByText("Sumber resmi berhasil ditautkan.")).toBeVisible();
-  await page.waitForTimeout(1500);
+  await waitForHydration(page, 'input[name="label"]');
 
   await page.getByLabel("Label kanal").fill("Kanal E2E");
   await page.getByLabel("URL kanal").fill("https://example.com/kanal-e2e");
   await page.getByRole("button", { name: "Tambah kanal" }).click();
   await expect(page.getByText("Kanal resmi berhasil ditambahkan.")).toBeVisible();
-  await page.waitForTimeout(1500);
+  await waitForHydration(page);
 
   await page.getByRole("button", { name: "Tandai terverifikasi" }).click();
   await expect(page.getByText("Versi ditandai sudah diverifikasi.")).toBeVisible();
-  await page.waitForTimeout(1500);
+  await waitForHydration(page);
 
   await page.getByRole("button", { name: "Kirim untuk review" }).click();
   await expect(page.getByText("Versi dikirim untuk review.")).toBeVisible();
-  await page.waitForTimeout(1500);
+  await waitForHydration(page);
 
   await page.getByRole("button", { name: "Publikasikan" }).click();
   await expect(page.getByText("Versi berhasil dipublikasikan.")).toBeVisible();

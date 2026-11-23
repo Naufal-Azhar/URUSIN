@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const protectedPrefixes = ["/dashboard", "/pengurusan", "/pengaturan", "/admin"];
 const isDevelopment = process.env.NODE_ENV !== "production";
+const trustProxyMisconfigured =
+  process.env.NODE_ENV === "production" && process.env.TRUST_PROXY !== "true";
 
 function buildContentSecurityPolicy(nonce: string) {
   const directives = [
@@ -33,6 +35,13 @@ function hasSessionCookie(request: NextRequest) {
 }
 
 export function proxy(request: NextRequest) {
+  if (trustProxyMisconfigured) {
+    return new NextResponse("Konfigurasi server tidak valid: TRUST_PROXY wajib true di produksi.", {
+      status: 503,
+      headers: { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+
   const nonce = randomUUID().replace(/-/g, "");
   const contentSecurityPolicy = buildContentSecurityPolicy(nonce);
   const requestHeaders = new Headers(request.headers);

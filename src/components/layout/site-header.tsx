@@ -7,9 +7,9 @@ export async function SiteHeader() {
 
   return (
     <header className="border-border bg-background/95 sticky top-0 z-40 border-b backdrop-blur">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <Link href="/" className="flex items-center gap-2 rounded-md py-1">
-          <span className="bg-primary text-primary-foreground flex h-9 w-9 items-center justify-center rounded-lg">
+          <span className="bg-primary text-primary-foreground flex h-9 w-9 items-center justify-center rounded-xl">
             <FileText aria-hidden="true" className="h-5 w-5" />
           </span>
           <span>

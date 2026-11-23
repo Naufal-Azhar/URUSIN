@@ -55,15 +55,15 @@ Yang **tidak** ada:
 
 ### 3.1 Modul
 
-| Modul | Tanggung jawab | Tidak boleh |
-|---|---|---|
-| `auth` | Konfigurasi Auth.js, adapter, email provider, session, guard, RBAC | Mengakses case warga selain lewat helper ownership |
-| `catalog` | Katalog publik, detail, pencarian, sumber, handoff | Menampilkan DRAFT/ARCHIVED |
-| `cases` | Workspace warga, checklist, langkah, status, version warning | Menyimpan identitas/dokumen |
-| `reports` | Laporan ketidakakuratan, anti-spam | Menyimpan NIK/email pelapor guest |
-| `admin` | CRUD draft, review, publish, archive, triage, audit | Membaca case warga |
-| `documents` | Generator PDF client-side | Mengirim data ke server |
-| `audit` | AuditEvent/ContentRevision | Menyimpan PII/token/body |
+| Modul       | Tanggung jawab                                                     | Tidak boleh                                        |
+| ----------- | ------------------------------------------------------------------ | -------------------------------------------------- |
+| `auth`      | Konfigurasi Auth.js, adapter, email provider, session, guard, RBAC | Mengakses case warga selain lewat helper ownership |
+| `catalog`   | Katalog publik, detail, pencarian, sumber, handoff                 | Menampilkan DRAFT/ARCHIVED                         |
+| `cases`     | Workspace warga, checklist, langkah, status, version warning       | Menyimpan identitas/dokumen                        |
+| `reports`   | Laporan ketidakakuratan, anti-spam                                 | Menyimpan NIK/email pelapor guest                  |
+| `admin`     | CRUD draft, review, publish, archive, triage, audit                | Membaca case warga                                 |
+| `documents` | Generator PDF client-side                                          | Mengirim data ke server                            |
+| `audit`     | AuditEvent/ContentRevision                                         | Menyimpan PII/token/body                           |
 
 ### 3.2 Aturan dependensi
 
@@ -203,29 +203,29 @@ Aturan:
 
 ### 5.4 Session dan cookie
 
-| Properti | Nilai |
-|---|---|
-| Strategi | Database session |
-| Max age | 30 hari |
-| Update age | 24 jam |
-| Cookie | HttpOnly, SameSite=Lax, Path=/, Secure di produksi |
-| Prefix | `__Secure-`/`__Host-` sesuai Auth.js di produksi |
-| Rotasi | Logout menghapus session DB; role change berlaku pada request berikutnya |
-| CSRF | Auth.js built-in untuk route auth; Server Actions memakai origin check Next.js |
+| Properti   | Nilai                                                                          |
+| ---------- | ------------------------------------------------------------------------------ |
+| Strategi   | Database session                                                               |
+| Max age    | 30 hari                                                                        |
+| Update age | 24 jam                                                                         |
+| Cookie     | HttpOnly, SameSite=Lax, Path=/, Secure di produksi                             |
+| Prefix     | `__Secure-`/`__Host-` sesuai Auth.js di produksi                               |
+| Rotasi     | Logout menghapus session DB; role change berlaku pada request berikutnya       |
+| CSRF       | Auth.js built-in untuk route auth; Server Actions memakai origin check Next.js |
 
 ### 5.5 RBAC dan ownership
 
-| Resource | Guest | CITIZEN | ADMIN |
-|---|---|---|---|
-| Katalog published | read | read | read |
-| Detail published | read | read | read |
-| Laporan | create (rate-limited) | create | triage |
-| Case sendiri | — | CRUD | — |
-| Case warga lain | — | — | **tidak ada akses** |
-| Draft/versi admin | — | — | CRUD |
-| Publish/archive | — | — | ya |
-| Audit | — | — | read |
-| Promosi admin | — | — | CLI server only |
+| Resource          | Guest                 | CITIZEN | ADMIN               |
+| ----------------- | --------------------- | ------- | ------------------- |
+| Katalog published | read                  | read    | read                |
+| Detail published  | read                  | read    | read                |
+| Laporan           | create (rate-limited) | create  | triage              |
+| Case sendiri      | —                     | CRUD    | —                   |
+| Case warga lain   | —                     | —       | **tidak ada akses** |
+| Draft/versi admin | —                     | —       | CRUD                |
+| Publish/archive   | —                     | —       | ya                  |
+| Audit             | —                     | —       | read                |
+| Promosi admin     | —                     | —       | CLI server only     |
 
 Aturan implementasi:
 
@@ -245,7 +245,7 @@ Aturan implementasi:
 
 ### 5.7 Account deletion
 
-- Wajib re-authentication magic link sebelum hapus akun.
+- Wajib token email sekali pakai sebelum hapus akun.
 - Transaksi: hapus Session/Account/ServiceCase (cascade progress), set `ContentReport.reporter_id = NULL`, nonaktifkan/soft-delete user.
 - Admin dengan `ContentRevision` tidak boleh hard-delete; gunakan `deleted_at`/`is_active`.
 - Tidak menyimpan email di audit setelah penghapusan.
@@ -362,11 +362,11 @@ COMMIT
 
 ### 7.2 Role dan privilege
 
-| Role | Kegunaan | Privilege |
-|---|---|---|
-| `postgres` | Superuser container | Hanya init script; tidak dipakai aplikasi |
-| `urusin_migrator` | Prisma CLI/migrasi | DDL pada schema `public`, owner objek |
-| `urusin_app` | Runtime Prisma | `SELECT/INSERT/UPDATE/DELETE`, `USAGE` sequence; **tanpa DDL** |
+| Role              | Kegunaan            | Privilege                                                      |
+| ----------------- | ------------------- | -------------------------------------------------------------- |
+| `postgres`        | Superuser container | Hanya init script; tidak dipakai aplikasi                      |
+| `urusin_migrator` | Prisma CLI/migrasi  | DDL pada schema `public`, owner objek                          |
+| `urusin_app`      | Runtime Prisma      | `SELECT/INSERT/UPDATE/DELETE`, `USAGE` sequence; **tanpa DDL** |
 
 Init script:
 
@@ -483,26 +483,26 @@ Lihat `IMPLEMENTATION_PLAN.md` §10.1. Ringkasan:
 
 ### 10.1 Threat model ringkas
 
-| Ancaman | Contoh | Kontrol |
-|---|---|---|
-| Broken access control | User A membuka case B | Ownership filter + 404; integration test BOLA |
-| BOLA via ID | Ubah `caseId` di URL/action | Re-query dengan `userId`; jangan percaya ID |
-| Cross-version tampering | Tandai requirement versi lain | Validasi `serviceVersionId` dalam transaksi |
-| Auth bypass | Akses `/admin` | Guard server; proxy hanya redirect; role dari DB |
-| Session theft | Cookie dicuri | HttpOnly, Secure, SameSite=Lax, session DB, logout |
-| CSRF | Aksi mutasi dari situs lain | Auth.js CSRF; Server Actions origin check; SameSite |
-| XSS | Judul/laporan berisi script | React escaping; tanpa dangerouslySetInnerHTML; CSP |
-| SQL injection | Query pencarian | Prisma parameterized; `Prisma.sql`; test payload |
-| Open redirect | `callbackUrl=https://evil` | Hanya path relatif same-origin |
-| SSRF | URL sumber/handoff | Tidak ada fetch server-side; validasi http/https |
-| Malicious link | `javascript:` di handoff | Skema allowlist; validasi publish |
-| Enumeration | Cek email terdaftar | Pesan seragam; rate limit |
-| Brute force/spam | Login/laporan | Rate limit + honeypot |
-| Data leakage in logs | Email/token di log | Logger allowlist; redaction; test |
-| Sensitive storage | NIK di DB/localStorage | Schema tanpa kolom; validasi laporan; PDF client-only |
-| Dependency supply chain | Package berbahaya/CVE | Pin, lockfile, audit, OSV/Trivy |
-| Privilege escalation | Citizen jadi admin | Role hanya via CLI/DB; tidak ada endpoint |
-| PII di URL | Email di magic link | `no-referrer`, tanpa log; keputusan owner |
+| Ancaman                 | Contoh                        | Kontrol                                               |
+| ----------------------- | ----------------------------- | ----------------------------------------------------- |
+| Broken access control   | User A membuka case B         | Ownership filter + 404; integration test BOLA         |
+| BOLA via ID             | Ubah `caseId` di URL/action   | Re-query dengan `userId`; jangan percaya ID           |
+| Cross-version tampering | Tandai requirement versi lain | Validasi `serviceVersionId` dalam transaksi           |
+| Auth bypass             | Akses `/admin`                | Guard server; proxy hanya redirect; role dari DB      |
+| Session theft           | Cookie dicuri                 | HttpOnly, Secure, SameSite=Lax, session DB, logout    |
+| CSRF                    | Aksi mutasi dari situs lain   | Auth.js CSRF; Server Actions origin check; SameSite   |
+| XSS                     | Judul/laporan berisi script   | React escaping; tanpa dangerouslySetInnerHTML; CSP    |
+| SQL injection           | Query pencarian               | Prisma parameterized; `Prisma.sql`; test payload      |
+| Open redirect           | `callbackUrl=https://evil`    | Hanya path relatif same-origin                        |
+| SSRF                    | URL sumber/handoff            | Tidak ada fetch server-side; validasi http/https      |
+| Malicious link          | `javascript:` di handoff      | Skema allowlist; validasi publish                     |
+| Enumeration             | Cek email terdaftar           | Pesan seragam; rate limit                             |
+| Brute force/spam        | Login/laporan                 | Rate limit + honeypot                                 |
+| Data leakage in logs    | Email/token di log            | Logger allowlist; redaction; test                     |
+| Sensitive storage       | NIK di DB/localStorage        | Schema tanpa kolom; validasi laporan; PDF client-only |
+| Dependency supply chain | Package berbahaya/CVE         | Pin, lockfile, audit, OSV/Trivy                       |
+| Privilege escalation    | Citizen jadi admin            | Role hanya via CLI/DB; tidak ada endpoint             |
+| PII di URL              | Email di magic link           | `no-referrer`, tanpa log; keputusan owner             |
 
 ### 10.2 Header keamanan
 
@@ -561,13 +561,13 @@ Catatan:
 
 Implementasi MVP: in-memory fixed window.
 
-| Aksi | Limit usulan |
-|---|---|
-| Kirim magic link per IP | 5 / 15 menit |
-| Kirim magic link per hash email | 3 / 15 menit |
-| Buat laporan per IP | 3 / jam |
-| Mutasi case per user | 60 / menit |
-| Login callback | 10 / 15 menit |
+| Aksi                            | Limit usulan  |
+| ------------------------------- | ------------- |
+| Kirim magic link per IP         | 5 / 15 menit  |
+| Kirim magic link per hash email | 3 / 15 menit  |
+| Buat laporan per IP             | 3 / jam       |
+| Mutasi case per user            | 60 / menit    |
+| Login callback                  | 10 / 15 menit |
 
 - Key = SHA-256(IP + route + optional user id); tidak menyimpan IP mentah.
 - IP diambil dari trusted proxy header hanya jika deployment di belakang reverse proxy; jika tidak, gunakan fallback lokal.
@@ -579,7 +579,15 @@ Implementasi MVP: in-memory fixed window.
 Structured log JSON:
 
 ```json
-{"ts":"...","level":"info","event":"case.progress.update","requestId":"...","userId":"...","outcome":"ok","durationMs":12}
+{
+  "ts": "...",
+  "level": "info",
+  "event": "case.progress.update",
+  "requestId": "...",
+  "userId": "...",
+  "outcome": "ok",
+  "durationMs": 12
+}
 ```
 
 Dilarang:

@@ -25,4 +25,14 @@ describe("rate limit in-memory", () => {
     expect(checkRateLimit("b", 1, 1_000, 0).allowed).toBe(true);
     expect(checkRateLimit("a", 1, 1_000, 10).allowed).toBe(false);
   });
+
+  it("membatasi jumlah bucket aktif", () => {
+    for (let index = 0; index < 10_000; index += 1) {
+      checkRateLimit(`bucket-${index}`, 1, 60_000, 0);
+    }
+
+    expect(checkRateLimit("bucket-0", 1, 60_000, 0).allowed).toBe(false);
+    expect(checkRateLimit("bucket-baru", 1, 60_000, 0).allowed).toBe(true);
+    expect(checkRateLimit("bucket-0", 1, 60_000, 0).allowed).toBe(true);
+  });
 });
